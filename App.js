@@ -1,46 +1,85 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from 'react-native';
 
 import Picker from './src/components/Picker';
 
+import api from './src/services/api';
+
 const App = () => {
-  return (
-    <View style={styles.container}>
-      <View style={styles.areaMoeda}>
-        <Text style={styles.titulo}>Selecione sua moeda</Text>
-        <Picker />
-      </View>
+  const [moeda, setMoeda] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [moedaSelecionada, setMoedaSelecionada] = useState(null);
+  const [moedaValor, setMoedaValor] = useState(0);
 
-      <View style={styles.areaValor}>
-        <Text style={styles.titulo}>
-          Digite um valor para converter em (R$)
-        </Text>
-        <TextInput
-          placeholder="Ex: 150"
-          style={styles.input}
-          keyboardType="numeric"
-        />
-      </View>
+  useEffect(() => {
+    async function loadMoedas() {
+      const response = await api.get('all');
 
-      <TouchableOpacity style={styles.buttonArea}>
-        <Text style={styles.buttonText}>Converter</Text>
-      </TouchableOpacity>
+      let arrayMoedas = [];
+      Object.keys(response.data).map(key => {
+        arrayMoedas.push({
+          key: key,
+          label: key,
+          value: key,
+        });
+      });
 
-      <View style={styles.areaCotacao}>
-        <Text style={styles.cotacaoText}>3 USD</Text>
-        <Text style={[styles.cotacaoText, {fontSize: 18, margin: 0}]}>
-          Corresponde a
-        </Text>
-        <Text style={styles.cotacaoText}>30,00</Text>
+      setMoeda(arrayMoedas);
+      setLoading(false);
+    }
+    loadMoedas();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
+        <ActivityIndicator color="#E00" size={40} />
       </View>
-    </View>
-  );
+    );
+  } else {
+    return (
+      <View style={styles.container}>
+        <View style={styles.areaMoeda}>
+          <Text style={styles.titulo}>Selecione sua moeda</Text>
+          <Picker
+            moedas={moeda}
+            onChange={moeda => setMoedaSelecionada(moeda)}
+          />
+        </View>
+
+        <View style={styles.areaValor}>
+          <Text style={styles.titulo}>
+            Digite um valor para converter em (R$)
+          </Text>
+          <TextInput
+            placeholder="Ex: 150"
+            style={styles.input}
+            keyboardType="numeric"
+            onChangeText={valor => setMoedaValor(valor)}
+          />
+        </View>
+
+        <TouchableOpacity style={styles.buttonArea}>
+          <Text style={styles.buttonText}>Converter</Text>
+        </TouchableOpacity>
+
+        <View style={styles.areaCotacao}>
+          <Text style={styles.cotacaoText}>3 USD</Text>
+          <Text style={[styles.cotacaoText, {fontSize: 18, margin: 0}]}>
+            Corresponde a
+          </Text>
+          <Text style={styles.cotacaoText}>30,00</Text>
+        </View>
+      </View>
+    );
+  }
 };
 
 const styles = StyleSheet.create({
