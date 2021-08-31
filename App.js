@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 
 import Picker from './src/components/Picker';
@@ -15,8 +16,12 @@ import api from './src/services/api';
 const App = () => {
   const [moeda, setMoeda] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [moedaSelecionada, setMoedaSelecionada] = useState(null);
   const [moedaValor, setMoedaValor] = useState(0);
+
+  const [valorMoeda, setValorMoeda] = useState(null);
+  const [valorConvertido, setValorConvertido] = useState(0);
 
   useEffect(() => {
     async function loadMoedas() {
@@ -36,6 +41,24 @@ const App = () => {
     }
     loadMoedas();
   }, []);
+
+  async function converter() {
+    if (moedaSelecionada === null || moedaValor === 0) {
+      alert('Selecione uma moeda');
+      return;
+    }
+
+    const response = await api.get(`all/${moedaSelecionada}-BRL`);
+    let resultado = (
+      response.data[moedaSelecionada].ask * parseFloat(moedaValor)
+    ).toFixed(2);
+
+    setValorConvertido(`R$ ${resultado}`);
+    setValorMoeda(moedaValor);
+
+    //Fecha o teclado quando estiver aberto
+    Keyboard.dismiss();
+  }
 
   if (loading) {
     return (
@@ -66,17 +89,21 @@ const App = () => {
           />
         </View>
 
-        <TouchableOpacity style={styles.buttonArea}>
+        <TouchableOpacity style={styles.buttonArea} onPress={converter}>
           <Text style={styles.buttonText}>Converter</Text>
         </TouchableOpacity>
 
-        <View style={styles.areaCotacao}>
-          <Text style={styles.cotacaoText}>3 USD</Text>
-          <Text style={[styles.cotacaoText, {fontSize: 18, margin: 0}]}>
-            Corresponde a
-          </Text>
-          <Text style={styles.cotacaoText}>30,00</Text>
-        </View>
+        {valorConvertido !== 0 && (
+          <View style={styles.areaCotacao}>
+            <Text style={styles.cotacaoText}>
+              {valorMoeda} {moedaSelecionada}
+            </Text>
+            <Text style={[styles.cotacaoText, {fontSize: 18, margin: 0}]}>
+              Corresponde a:
+            </Text>
+            <Text style={styles.cotacaoText}>{valorConvertido}</Text>
+          </View>
+        )}
       </View>
     );
   }
